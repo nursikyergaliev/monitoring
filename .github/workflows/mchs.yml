@@ -27,7 +27,7 @@ jobs:
 
       - name: Установить библиотеки
         run: |
-          pip install requests feedparser beautifulsoup4
+          pip install requests feedparser
 
       - name: Запустить монитор
         env:
