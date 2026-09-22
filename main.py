@@ -1,7 +1,6 @@
 import json
 import os
 import re
-from bs4 import BeautifulSoup
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from urllib.parse import quote
@@ -18,36 +17,35 @@ MAX_AGE_MINUTES = 60
 QUERIES = [
     # Русский
     "Казахстан МЧС",
-    "Казахстан ДЧС",
     "Казахстан чрезвычайная ситуация",
     "Казахстан пожар спасатели",
-    "Казахстан пожар",
-    "Казахстан наводнение",
-    "Казахстан паводок",
-    "Казахстан землетрясение",
+    "Казахстан пожар МЧС",
+    "Казахстан наводнение МЧС",
+    "Казахстан паводок МЧС",
+    "Казахстан землетрясение МЧС",
     "Казахстан спасатели",
     "Казахстан спасательная операция",
-    "Казахстан эвакуация",
-    "Казахстан взрыв",
-    "Казахстан обрушение",
-    "Казахстан авария",
+    "Казахстан эвакуация МЧС",
+    "Казахстан взрыв МЧС",
+    "Казахстан обрушение МЧС",
+    "Казахстан авария МЧС",
 
     # Қазақша
     "Қазақстан ТЖМ",
-    "Қазақстан ТЖД",
     "Қазақстан төтенше жағдай",
     "Қазақстан өрт құтқарушылар",
-    "Қазақстан өрт",
-    "Қазақстан су тасқыны",
-    "Қазақстан су басу",
-    "Қазақстан жер сілкінісі",
+    "Қазақстан өрт ТЖМ",
+    "Қазақстан су тасқыны ТЖМ",
+    "Қазақстан су басу ТЖМ",
+    "Қазақстан жер сілкінісі ТЖМ",
     "Қазақстан құтқарушылар",
     "Қазақстан құтқару операциясы",
-    "Қазақстан эвакуация",
-    "Қазақстан жарылыс",
-    "Қазақстан ғимарат құлауы",
-    "Қазақстан апат",
+    "Қазақстан эвакуация ТЖМ",
+    "Қазақстан жарылыс ТЖМ",
+    "Қазақстан ғимарат құлауы ТЖМ",
+    "Қазақстан апат ТЖМ",
 ]
+
 SENT_FILE = "data/sent.json"
 
 
@@ -162,77 +160,17 @@ def get_articles():
     return articles
 
 
-def find_image(url):
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0"
-            },
-            timeout=15,
-            allow_redirects=True,
-        )
-
-        if response.status_code != 200:
-            return None
-
-        soup = BeautifulSoup(response.text, "html.parser")
-
-        # Основной вариант — Open Graph
-        image = soup.find("meta", property="og:image")
-
-        if image and image.get("content"):
-            return image["content"]
-
-        # Запасной вариант — Twitter
-        image = soup.find("meta", attrs={"name": "twitter:image"})
-
-        if image and image.get("content"):
-            return image["content"]
-
-        return None
-
-    except Exception as e:
-        print(f"Не удалось найти фото: {e}")
-        return None
-
-
 def send_telegram(article):
     title = article["title"]
     url = article["url"]
     source = article["source"]
 
-    caption = f"<b>{title}</b>\n"
+    message = f"<b>{title}</b>\n"
 
     if source:
-        caption += f"\nИсточник: {source}"
+        message += f"\nИсточник: {source}"
 
-    caption += f"\n\n<a href=\"{url}\">Открыть новость</a>"
-
-    image_url = find_image(url)
-
-    if image_url:
-        telegram_url = (
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
-        )
-
-        response = requests.post(
-            telegram_url,
-            data={
-                "chat_id": TELEGRAM_CHAT_ID,
-                "photo": image_url,
-                "caption": caption,
-                "parse_mode": "HTML",
-            },
-            timeout=30,
-        )
-
-        # Если Telegram не смог отправить фотографию,
-        # отправляем новость обычным сообщением.
-        if response.ok:
-            return
-
-        print("Фото не отправилось, отправляем текстом.")
+    message += f"\n\n<a href=\"{url}\">Открыть новость</a>"
 
     telegram_url = (
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -242,7 +180,7 @@ def send_telegram(article):
         telegram_url,
         json={
             "chat_id": TELEGRAM_CHAT_ID,
-            "text": caption,
+            "text": message,
             "parse_mode": "HTML",
             "disable_web_page_preview": False,
         },
