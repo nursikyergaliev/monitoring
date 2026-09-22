@@ -161,16 +161,18 @@ def get_articles():
 
 
 def send_telegram(article):
-    title = clean_text(article["title"])
-    url = article["url"]
-    source = clean_text(article["source"])
+    import html
 
-    message = title
+    title = html.escape(clean_text(article["title"]))
+    url = article["url"]
+    source = html.escape(clean_text(article["source"]))
+
+    message = f"<b>{title}</b>"
 
     if source:
         message += f"\n\nИсточник: {source}"
 
-    message += f"\n\n{url}"
+    message += f'\n\n<a href="{html.escape(url, quote=True)}">Открыть новость</a>'
 
     telegram_url = (
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -181,6 +183,7 @@ def send_telegram(article):
         data={
             "chat_id": TELEGRAM_CHAT_ID,
             "text": message,
+            "parse_mode": "HTML",
         },
         timeout=30,
     )
