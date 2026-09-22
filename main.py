@@ -161,16 +161,16 @@ def get_articles():
 
 
 def send_telegram(article):
-    title = article["title"]
+    title = clean_text(article["title"])
     url = article["url"]
-    source = article["source"]
+    source = clean_text(article["source"])
 
-    message = f"<b>{title}</b>\n"
+    message = title
 
     if source:
-        message += f"\nИсточник: {source}"
+        message += f"\n\nИсточник: {source}"
 
-    message += f"\n\n<a href=\"{url}\">Открыть новость</a>"
+    message += f"\n\n{url}"
 
     telegram_url = (
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -178,14 +178,16 @@ def send_telegram(article):
 
     response = requests.post(
         telegram_url,
-        json={
+        data={
             "chat_id": TELEGRAM_CHAT_ID,
             "text": message,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": False,
         },
         timeout=30,
     )
+
+    if not response.ok:
+        print(f"Telegram ответил: {response.status_code}")
+        print(response.text)
 
     response.raise_for_status()
 
